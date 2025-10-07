@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MAX_LEN 100
 
-void trimWhitespace(char* inputStr) {
+void trimWhitespace(char *inputStr) {
     int i, k = 0;
     for (i = 0; inputStr[i]; i++) {
         if (!isspace(inputStr[i])) {
@@ -16,78 +17,124 @@ void trimWhitespace(char* inputStr) {
 }
 
 int validateExpression(char *expression) {
-    for (int i = 0; expression[i]; i++) {
-        if (!isdigit(expression[i]) && !strchr("+-*/", expression[i])) {
+    int length = strlen(expression);
+    if (length == 0) return 0;
+
+    if (strchr("+-*/", expression[0]) || strchr("+-*/", expression[length - 1])) {
+        return 0;
+    }
+
+    bool checkdigit= true;
+
+    for (int i = 0; i < length; i++) {
+        char ch = expression[i];
+
+        if (isdigit(ch)) {
+            while (isdigit(expression[i + 1])) {
+                i++;
+            }
+            checkdigit= false;
+        } 
+        else if (strchr("+-*/", ch)) {
+            if (checkdigit) return 0;
+            checkdigit= true;
+        } 
+        else {
             return 0;
         }
     }
+
+    if (checkdigit) return 0;
+
     return 1;
 }
 
 int calculate(char *expression, int *err) {
-    int nums[MAX_LEN], num_idx = 0;
-    char operators[MAX_LEN], op_idx = 0;
-    int i = 0;
+    int numstack[MAX_LEN];
+    char opstack[MAX_LEN];
+    int numtop = -1;
+    int optop = -1;
 
+    int i = 0;
     while (expression[i]) {
         if (isdigit(expression[i])) {
-            int current_val = 0;
+            int cur = 0;
             while (isdigit(expression[i])) {
-                current_val = current_val * 10 + (expression[i] - '0');
+                cur= cur * 10 + (expression[i] - '0');
                 i++;
             }
-            nums[num_idx++] = current_val;
-        } else {
-            operators[op_idx++] = expression[i];
-            i++;
-        }
-    }
+            numstack[++numtop] = cur;
+        } 
+        else if (strchr("+-*/", expression[i])) {
+            char op = expression[i];
 
-    for (i = 0; i < op_idx; i++) {
-        if (operators[i] == '*' || operators[i] == '/') {
-            if (operators[i] == '/' && nums[i+1] == 0) {
-                *err = 1;
-                return 0;
+            if (op == '*' || op == '/') {
+                if (numtop < 0) {
+                    *err = 1;
+                    return 0;
+                }
+                int left = numstack[numtop--];
+
+                i++;
+                if (!isdigit(expression[i])) {
+                    *err = 1;
+                    return 0;
+                }
+                int right = 0;
+                while (isdigit(expression[i])) {
+                    right = right * 10 + (expression[i] - '0');
+                    i++;
+                }
+
+                if (op == '/' && right == 0) {
+                    *err = 1;
+                    return 0;
+                }
+
+                int res = (op == '*') ? (left * right) : (left / right);
+                numstack[++numtop] = res;
+                continue;
+            } 
+            else {
+                opstack[++optop] = op;
             }
-            nums[i] = (operators[i] == '*') ? (nums[i] * nums[i+1]) : (nums[i] / nums[i+1]);
-
-            for (int j = i + 1; j < num_idx - 1; j++) nums[j] = nums[j+1];
-            for (int j = i; j < op_idx - 1; j++) operators[j] = operators[j+1];
-
-            num_idx--;
-            op_idx--;
-            i--;
+            i++;
+        } 
+        else {
+            *err = 1;
+            return 0;
         }
     }
 
-    int final_result = nums[0];
-    for (i = 0; i < op_idx; i++) {
-        if (operators[i] == '+') final_result += nums[i+1];
-        else final_result -= nums[i+1];
+    int result = numstack[0];
+    int numindex = 1;
+    for (int j = 0; j <= optop; j++) {
+        if (opstack[j] == '+') result += numstack[numindex++];
+        else if (opstack[j] == '-') result -= numstack[numindex++];
     }
 
-    return final_result;
+    return result;
 }
 
 int main() {
-    char user_input[MAX_LEN];
+    char inputexp[MAX_LEN];
     printf("Enter expression: ");
-    fgets(user_input, MAX_LEN, stdin);
+    fgets(inputexp, MAX_LEN, stdin);
 
-    trimWhitespace(user_input);
+    trimWhitespace(inputexp);
 
-    if (!validateExpression(user_input)) {
+    if (!validateExpression(inputexp)) {
         printf("Error: Invalid expression.\n");
         return 1;
     }
 
-    int error_code = 0;
-    int solution = calculate(user_input, &error_code);
+    int error = 0;
+    int solution = calculate(inputexp, &error);
 
-    if (error_code) {
-        printf("Error: Division by zero.\n");
+    if (error) {
+        printf("Error: Division by zero or invalid sequence.\n");
     } else {
-        printf("%d\n", solution);
+        printf("Result: %d\n", solution);
     }
 
     return 0;
