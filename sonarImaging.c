@@ -94,10 +94,6 @@ int readMatrixSize() {
 int main() {
     int n = readMatrixSize();
     int *matrix = (int *)malloc(n * n * sizeof(int));
-    if (!matrix) {
-        printf("Memory allocation failed\n");
-        return 1;
-    }
     srand(time(0));
     for (int i = 0; i < n * n; i++) {
         *(matrix + i) = rand() % 256;
