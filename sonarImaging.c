@@ -77,8 +77,8 @@ int readMatrixSize() {
         result = scanf("%d", &n);
 
         if (result != 1) {
-            printf("Invalid input. Only numbers are allowed.\n");
-            while (getchar() != '\n');  // clear input buffer
+            printf("Invalid input. Only numbers between 2-10 allowed.\n");
+            while (getchar() != '\n'); 
             continue;
         }
 
