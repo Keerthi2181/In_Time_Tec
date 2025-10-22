@@ -68,31 +68,28 @@ void applySmoothing(int *matrix,int n) {
 }
 
 int readMatrixSize() {
-    char input[10];
     int n;
+    int result;
 
     while (1) {
         printf("Enter matrix size (2-10): ");
-        if (!fgets(input, sizeof(input), stdin)) continue;
 
-        int valid = 1;
-        for (int i = 0; input[i] != '\0' && input[i] != '\n'; i++) {
-            if (!isdigit(input[i])) {
-                valid = 0;
-                break;
-            }
-        }
+        result = scanf("%d", &n);
 
-        if (!valid) {
-            printf("Invalid input.Only number between 2-10 allowed.\n");
+        if (result != 1) {
+            printf("Invalid input. Only numbers are allowed.\n");
+            while (getchar() != '\n');  // clear input buffer
             continue;
         }
 
-        n = atoi(input);
-        if (n >= 2 && n <= 10) return n;
-        printf("Invalid input.Only number between 2-10 allowed.\n");
+        if (n >= 2 && n <= 10) {
+            return n;
+        } else {
+            printf("Invalid input. Only numbers between 2-10 allowed.\n");
+        }
     }
 }
+
 
 int main() {
     int n = readMatrixSize();
