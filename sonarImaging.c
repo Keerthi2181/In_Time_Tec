@@ -3,26 +3,26 @@
 #include <ctype.h>
 #include <time.h>
 
-void printMatrix(int *matrix, int n) {
-    for (int i=0;i<n;i++) {
-        for (int j=0;j<n;j++) {
-            printf("%4d",*(matrix+i*n+j));
+void printMatrix(int *matrix, int size) {
+    for (int i=0;i<size;i++) {
+        for (int j=0;j<size;j++) {
+            printf("%4d",*(matrix+i*size+j));
         }
         printf("\n");
     }
 }
 
-void rotate90Clockwise(int *matrix, int n) {
-    for (int layer=0;layer<n/2;layer++) {
-        int first=layer;
-        int last=n-1-layer;
+void rotate90Clockwise(int *matrix, int size) {
+    for (int layer=0;layer<size/2;layer++) {
+        int startIndex=layer;
+        int endIndex=size-1-layer;
 
-        for (int i=first;i<last;i++) {
-            int offset=i-first;
-            int *top=matrix+first*n+i;
-            int *left=matrix+(last-offset)*n+first;
-            int *bottom=matrix+last*n+(last-offset);
-            int *right=matrix+i*n+last;
+        for (int i=startIndex;i<endIndex;i++) {
+            int offset=i-startIndex;
+            int *top=matrix+startIndex*size+i;
+            int *left=matrix+(endIndex-offset)*size+startIndex;
+            int *bottom=matrix+endIndex*size+(endIndex-offset);
+            int *right=matrix+i*size+endIndex;
 
             int temp =*left;
             *left=*bottom;
@@ -34,23 +34,23 @@ void rotate90Clockwise(int *matrix, int n) {
 }
 
 
-void applySmoothing(int *matrix,int n) {
-    int *tempRow=(int *)malloc(n*sizeof(int));
+void applySmoothing(int *matrix,int size) {
+    int *tempRow=(int *)malloc(size*sizeof(int));
 
-    int *original=(int *)malloc(n*n*sizeof(int));
-    for(int i=0;i<n*n;i++) {
+    int *original=(int *)malloc(size*size*sizeof(int));
+    for(int i=0;i<size*size;i++) {
         *(original+i)=*(matrix+i);
     }
 
-    for(int i=0;i<n;i++) {
-        for(int j=0;j<n;j++) {
+    for(int i=0;i<size;i++) {
+        for(int j=0;j<size;j++) {
             int sum=0; 
             int count=0;
 
-            for(int r=i-1;r<=i+1;r++) {
-                for(int c=j-1;c<=j+1;c++) {
-                    if(r>=0 && r<n && c>=0 && c<n) {
-                        sum+=*(original+r*n+c);
+            for(int row=i-1;row<=i+1;row++) {
+                for(int column=j-1;column<=j+1;column++) {
+                    if(row>=0 && row<size && column>=0 && column<size) {
+                        sum+=*(original+row*size+column);
                         count++;
                     }
                 }
@@ -58,8 +58,8 @@ void applySmoothing(int *matrix,int n) {
             *(tempRow+j)=sum/count;
         }
 
-        for(int j=0;j<n;j++) {
-            *(matrix+i*n+j)=*(tempRow+j);
+        for(int j=0;j<size;j++) {
+            *(matrix+i*size+j)=*(tempRow+j);
         }
     }
     free(tempRow);
@@ -67,20 +67,20 @@ void applySmoothing(int *matrix,int n) {
 }
 
 int readMatrixSize() {
-    int n;
+    int size;
     int result;
 
     while(1) {
         printf("Enter matrix size (2-10): ");
-        result = scanf("%d", &n);
+        result = scanf("%d", &size);
         if (result != 1) {
             printf("Invalid input.Only numbers between 2-10 allowed.\n");
             while (getchar()!='\n');
             continue;
         }
 
-        if (n>=2 && n<=10) {
-            return n;
+        if (size>=2 && size<=10) {
+            return size;
         } else {
             printf("Invalid input.Only numbers between 2-10 allowed.\n");
         }
@@ -89,23 +89,23 @@ int readMatrixSize() {
 
 
 int main() {
-    int n = readMatrixSize();
-    int *matrix = (int *)malloc(n*n*sizeof(int));
+    int size = readMatrixSize();
+    int *matrix = (int *)malloc(size*size*sizeof(int));
     srand(time(0));
-    for (int i = 0; i < n * n; i++) {
+    for (int i = 0; i < size*size; i++) {
         *(matrix + i) = rand() % 256;
     }
 
     printf("\nOriginal Matrix:\n");
-    printMatrix(matrix, n);
+    printMatrix(matrix, size);
 
-    rotate90Clockwise(matrix, n);
+    rotate90Clockwise(matrix, size);
     printf("\nRotated Matrix:\n");
-    printMatrix(matrix, n);
+    printMatrix(matrix, size);
 
-    applySmoothing(matrix, n);
+    applySmoothing(matrix, size);
     printf("\nSmoothing Filter:\n");
-    printMatrix(matrix, n);
+    printMatrix(matrix, size);
 
     free(matrix);
     return 0;
