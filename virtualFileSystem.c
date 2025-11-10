@@ -23,7 +23,7 @@ static FreeBlock *freeBlockHead=NULL;
 static FreeBlock *freeBlockTail=NULL;
 static int totalFreeBlocks=0;
 
-static void initialize_free_blocks() 
+static void initializeFreeBlock() 
 {
     for(int index=0;index<NUM_BLOCKS;++index) 
     {
@@ -40,7 +40,7 @@ static void initialize_free_blocks()
     }
 }
 
-static int allocate_free_block_from_head() 
+static int allocateFreeBlockFromHead() 
 {
     if(!freeBlockHead) 
         return -1;
@@ -56,7 +56,7 @@ static int allocate_free_block_from_head()
     return index;
 }
 
-static void append_free_block_to_tail(int blockIndex) 
+static void appendFreeBlockToTail(int blockIndex) 
 {
     FreeBlock *newFreeBlock=(FreeBlock *)malloc(sizeof(FreeBlock));
     newFreeBlock->blockIndex=blockIndex;
@@ -70,7 +70,7 @@ static void append_free_block_to_tail(int blockIndex)
     totalFreeBlocks++;
 }
 
-static void free_free_block_list() 
+static void freeFreeBlockList() 
 {
     FreeBlock *walker=freeBlockHead;
     while(walker) {
@@ -82,7 +82,7 @@ static void free_free_block_list()
     totalFreeBlocks=0;
 }
 
-static int allocate_n_blocks_temp(int n, int destIndices[]) 
+static int allocateNBlocksTemp(int n, int destIndices[]) 
 {
     if(n<=0) 
         return 1;
@@ -91,11 +91,11 @@ static int allocate_n_blocks_temp(int n, int destIndices[])
     int allocatedCount = 0;
     for(int index=0; index<n; ++index) 
     {
-        int blockIndex = allocate_free_block_from_head();
+        int blockIndex = allocateFreeBlockFromHead();
         if(blockIndex<0) 
         {
             for(int indexj=0; indexj<allocatedCount; ++indexj) 
-                append_free_block_to_tail(destIndices[indexj]);
+                appendFreeBlockToTail(destIndices[indexj]);
             return 0;
         }
         destIndices[allocatedCount++]=blockIndex;
@@ -119,7 +119,7 @@ typedef struct FileNode
 static FileNode *rootDirectory=NULL;
 static FileNode *currentWorkingDirectory=NULL;
 
-static FileNode* create_filernode(const char *name, int isDirectoryFlag, FileNode *parentDirectory) 
+static FileNode* createFilernode(const char *name, int isDirectoryFlag, FileNode *parentDirectory) 
 {
     FileNode *newNode=(FileNode *)malloc(sizeof(FileNode));
     strncpy(newNode->name, name, MAX_NAME_LEN);
@@ -135,7 +135,7 @@ static FileNode* create_filernode(const char *name, int isDirectoryFlag, FileNod
     return newNode;
 }
  
-static void add_child_to_directory(FileNode *directoryNode, FileNode *childNode) 
+static void addChildToDirectory(FileNode *directoryNode, FileNode *childNode) 
 {
     if(!directoryNode || !directoryNode->isDirectory) 
         return;
@@ -155,7 +155,7 @@ static void add_child_to_directory(FileNode *directoryNode, FileNode *childNode)
     }
 }
 
-static int remove_child_from_directory(FileNode *directoryNode, FileNode *childNode) 
+static int removeChildFromDirectory(FileNode *directoryNode, FileNode *childNode) 
 {
     if(!directoryNode || !directoryNode->childHead || !childNode) 
         return 0;
@@ -184,7 +184,7 @@ static int remove_child_from_directory(FileNode *directoryNode, FileNode *childN
     return 0;
 }
 
-static FileNode* find_child_in_directory(FileNode *directoryNode, const char *name) 
+static FileNode* findChildInDirectory(FileNode *directoryNode, const char *name) 
 {
     if(!directoryNode || !directoryNode->childHead) 
         return NULL;
@@ -199,21 +199,21 @@ static FileNode* find_child_in_directory(FileNode *directoryNode, const char *na
     return NULL;
 }
 
-static void free_filernode_memory(FileNode *node) 
+static void freeFilerNodeMemory(FileNode *node) 
 {
     if(!node) 
         return;
     free(node);
 }
 
-static int compute_blocks_needed(int byteCount) 
+static int computeBlocksNeeded(int byteCount) 
 {
     if(byteCount <= 0) 
         return 0;
     return(byteCount + BLOCK_SIZE - 1) / BLOCK_SIZE;
 }
 
-static void free_blocks_of_file(FileNode *fileNode) 
+static void freeBlocksOfFile(FileNode *fileNode) 
 {
     if(!fileNode || fileNode->isDirectory) 
         return;
@@ -222,7 +222,7 @@ static void free_blocks_of_file(FileNode *fileNode)
         int freedBlockIndex = fileNode->blockPointers[blockIndex];
         if(freedBlockIndex >= 0) 
         {
-            append_free_block_to_tail(freedBlockIndex);
+            appendFreeBlockToTail(freedBlockIndex);
             fileNode->blockPointers[blockIndex] = -1;
         }
     }
@@ -230,7 +230,7 @@ static void free_blocks_of_file(FileNode *fileNode)
     fileNode->fileSizeBytes = 0;
 }
 
-static void read_file_and_print(FileNode *fileNode) 
+static void readFileAndPrint(FileNode *fileNode) 
 {
     if(!fileNode || fileNode->isDirectory) 
     {
@@ -254,32 +254,32 @@ static void read_file_and_print(FileNode *fileNode)
     printf("\n");
 }
 
-static void cmd_mkdir(const char *directoryName) 
+static void cmdMkdir(const char *directoryName) 
 {
     if(!directoryName || strlen(directoryName) == 0) 
     {
         printf("Invalid directory name.\n");
         return;
     }
-    if(find_child_in_directory(currentWorkingDirectory, directoryName)) 
+    if(findChildInDirectory(currentWorkingDirectory, directoryName)) 
     {
         printf("Name already exists in current directory.\n");
         return;
     }
-    FileNode *newDirectory = create_filernode(directoryName, 1, currentWorkingDirectory);
-    add_child_to_directory(currentWorkingDirectory, newDirectory);
+    FileNode *newDirectory = createFilerNode(directoryName, 1, currentWorkingDirectory);
+    addChildToDirectory(currentWorkingDirectory, newDirectory);
     printf("Directory '%s' created successfully.\n", directoryName);
 }
 
 
-static void cmd_rmdir(const char *directoryName) 
+static void cmdRmdir(const char *directoryName) 
 {
     if(!directoryName || strlen(directoryName) == 0) 
     {
         printf("Invalid directory name.\n");
         return;
     }
-    FileNode *targetDirectory = find_child_in_directory(currentWorkingDirectory, directoryName);
+    FileNode *targetDirectory = findChildInDirectory(currentWorkingDirectory, directoryName);
     if(!targetDirectory) 
     {
         printf("Directory not found.\n");
@@ -295,38 +295,38 @@ static void cmd_rmdir(const char *directoryName)
         printf("Directory not empty. Remove files first.\n");
         return;
     }
-    remove_child_from_directory(currentWorkingDirectory, targetDirectory);
-    free_filernode_memory(targetDirectory);
+    removeChildFromDirectory(currentWorkingDirectory, targetDirectory);
+    freeFilerNodeMemory(targetDirectory);
     printf("Directory removed successfully.\n");
 }
 
 
-static void cmd_create(const char *fileName) 
+static void cmdCreate(const char *fileName) 
 {
     if(!fileName || strlen(fileName) == 0) 
     {
         printf("Invalid file name.\n");
         return;
     }
-    if(find_child_in_directory(currentWorkingDirectory, fileName)) 
+    if(findChildInDirectory(currentWorkingDirectory, fileName)) 
     {
         printf("Name already exists in current directory.\n");
         return;
     }
-    FileNode *newFile = create_filernode(fileName, 0, currentWorkingDirectory);
-    add_child_to_directory(currentWorkingDirectory, newFile);
+    FileNode *newFile = createFilerNode(fileName, 0, currentWorkingDirectory);
+    addChildToDirectory(currentWorkingDirectory, newFile);
     printf("File '%s' created successfully.\n", fileName);
 }
 
 
-static void cmd_delete(const char *fileName) 
+static void cmdDelete(const char *fileName) 
 {
     if(!fileName || strlen(fileName) == 0) 
     {
         printf("Invalid file name.\n");
         return;
     }
-    FileNode *targetFile = find_child_in_directory(currentWorkingDirectory, fileName);
+    FileNode *targetFile = findChildInDirectory(currentWorkingDirectory, fileName);
     if(!targetFile) 
     {
         printf("File not found.\n");
@@ -337,20 +337,20 @@ static void cmd_delete(const char *fileName)
         printf("Is a directory. Use rmdir to remove directories.\n");
         return;
     }
-    free_blocks_of_file(targetFile);
-    remove_child_from_directory(currentWorkingDirectory, targetFile);
-    free_filernode_memory(targetFile);
+    freeBlocksOfFile(targetFile);
+    removeChildFromDirectory(currentWorkingDirectory, targetFile);
+    freeFilernodeMemory(targetFile);
     printf("File deleted successfully.\n");
 }
 
-static void cmd_write(const char *fileName, const char *contentString) 
+static void cmdWrite(const char *fileName, const char *contentString) 
 {
     if(!fileName) 
     { 
         printf("Invalid file name.\n"); 
         return; 
     }
-    FileNode *targetFile = find_child_in_directory(currentWorkingDirectory, fileName);
+    FileNode *targetFile = findChildInDirectory(currentWorkingDirectory, fileName);
     if(!targetFile) 
     { 
         printf("File not found.\n"); 
@@ -382,13 +382,13 @@ static void cmd_write(const char *fileName, const char *contentString)
         int willFill = (bytesRemaining < freeInLastBlock) ? bytesRemaining : freeInLastBlock;
         remainingAfterFill -= willFill;
     }
-    int blocksNeeded = compute_blocks_needed(remainingAfterFill);
+    int blocksNeeded = computeBlocksNeeded(remainingAfterFill);
 
     int *newBlockIndices = NULL;
     if(blocksNeeded > 0) 
     {
         newBlockIndices = (int *)malloc(sizeof(int) * blocksNeeded);
-        if (!allocate_n_blocks_temp(blocksNeeded, newBlockIndices)) 
+        if (!allocateNBlocksTemp(blocksNeeded, newBlockIndices)) 
         {
             free(newBlockIndices);
             printf("Disk full. Write failed.\n");
@@ -428,14 +428,14 @@ static void cmd_write(const char *fileName, const char *contentString)
 }
 
 
-static void cmd_read(const char *fileName) 
+static void cmdRead(const char *fileName) 
 {
     if (!fileName) 
     { 
         printf("Invalid file name.\n"); 
         return; 
     }
-    FileNode *targetFile = find_child_in_directory(currentWorkingDirectory, fileName);
+    FileNode *targetFile = findChildInDirectory(currentWorkingDirectory, fileName);
     if (!targetFile) 
     { 
         printf("File not found.\n"); 
@@ -446,11 +446,11 @@ static void cmd_read(const char *fileName)
         printf("Cannot read a directory.\n"); 
         return; 
     }
-    read_file_and_print(targetFile);
+    readFileAndPrint(targetFile);
 }
 
 
-static void cmd_ls() 
+static void cmdLs() 
 {
     if (!currentWorkingDirectory->childHead) 
     {
@@ -469,7 +469,7 @@ static void cmd_ls()
     } while (walker != headChild);
 }
 
-static void cmd_cd(const char *targetDirectoryName) 
+static void cmdCd(const char *targetDirectoryName) 
 {
     if (!targetDirectoryName) 
     { 
@@ -516,7 +516,7 @@ static void cmd_cd(const char *targetDirectoryName)
         return;
     }
 
-    FileNode *targetDirectory = find_child_in_directory(currentWorkingDirectory, targetDirectoryName);
+    FileNode *targetDirectory = findChildInDirectory(currentWorkingDirectory, targetDirectoryName);
     if (!targetDirectory) { printf("Directory not found.\n"); return; }
     if (!targetDirectory->isDirectory) { printf("Not a directory.\n"); return; }
 
@@ -542,7 +542,7 @@ static void cmd_cd(const char *targetDirectoryName)
 
 
 
-static void cmd_pwd() 
+static void cmdPwd() 
 {
     FileNode *directoryWalker = currentWorkingDirectory;
     if (directoryWalker == rootDirectory) 
@@ -571,7 +571,7 @@ static void cmd_pwd()
 
 
 
-static void cmd_df() 
+static void cmdDf() 
 {
     int usedBlocks = NUM_BLOCKS - totalFreeBlocks;
     double diskUsagePercent = ((double)usedBlocks / (double)NUM_BLOCKS) * 100.0;
@@ -584,7 +584,7 @@ static void cmd_df()
 }
 
 
-static void free_all_filernodes_recursive(FileNode *directoryNode) 
+static void freeAllFilerNodesRecursive(FileNode *directoryNode) 
 {
     if (!directoryNode) 
         return;
@@ -605,19 +605,19 @@ static void free_all_filernodes_recursive(FileNode *directoryNode)
         {
             FileNode *childNode = childrenList[index];
             if (childNode->isDirectory) 
-                free_all_filernodes_recursive(childNode);
+                freeAllFilerNodesRecursive(childNode);
             else 
             {
-                free_blocks_of_file(childNode);
-                free_filernode_memory(childNode);
+                freeBlocksOfFile(childNode);
+                freEFilerNodeMemory(childNode);
             }
         }
         directoryNode->childHead = NULL;
     }
-    free_filernode_memory(directoryNode);
+    freeFilerNodeMemory(directoryNode);
 }
 
-static void cleanup_and_exit() 
+static void cleanupAndExit() 
 {
     if (rootDirectory) 
     {
@@ -638,23 +638,23 @@ static void cleanup_and_exit()
             {
                 FileNode *childNode = childrenList[index];
                 if (childNode->isDirectory) 
-                    free_all_filernodes_recursive(childNode);
+                    freeAllFilerNodesRecursive(childNode);
                 else 
                 {
-                    free_blocks_of_file(childNode);
-                    free_filernode_memory(childNode);
+                    freeBlocksOfFile(childNode);
+                    freeFilerNodeMemory(childNode);
                 }
             }
             rootDirectory->childHead = NULL;
         }
-        free_filernode_memory(rootDirectory);
+        freeFilerNodeMemory(rootDirectory);
         rootDirectory = NULL;
         currentWorkingDirectory = NULL;
     }
-    free_free_block_list();
+    freeFreeBlockList();
 }
 
-static void trim_whitespace(char *s) 
+static void trimWhitespace(char *s) 
 {
     char *walker = s;
     while (isspace((unsigned char)*walker)) 
@@ -667,7 +667,7 @@ static void trim_whitespace(char *s)
 }
 
 
-static int tokenize_command(char *inputLine, char *tokenArray[], int maxTokens) 
+static int tokenizeCommand(char *inputLine, char *tokenArray[], int maxTokens) 
 {
     int tokenCount = 0;
     char *walker = inputLine;
@@ -712,18 +712,18 @@ static int tokenize_command(char *inputLine, char *tokenArray[], int maxTokens)
 }
 
 
-static void initialize_virtualFileSystem() 
+static void initializeVirtualFileSystem() 
 {
     memset(virtualDisk, 0, sizeof(virtualDisk));
-    initialize_free_blocks();
-    rootDirectory = create_filernode("/", 1, NULL);
+    initializeFreeBlocks();
+    rootDirectory = createFilerNode("/", 1, NULL);
     rootDirectory->childHead = NULL;
     currentWorkingDirectory = rootDirectory;
 }
 
 int main() 
 {
-    initialize_virtualFileSystem();
+    initializeVirtualFileSystem();
     printf("Compact VFS - ready. Type 'exit' to quit.\n\n");
 
     char inputLine[INPUT_BUFFER_SIZE];
@@ -737,25 +737,25 @@ int main()
         if (!fgets(inputLine, sizeof(inputLine), stdin)) 
         {
             printf("\n");
-            cleanup_and_exit();
+            cleanupAndExit();
             printf("Memory released. Exiting program...\n");
             return 0;
         }
 
         size_t inputLength = strlen(inputLine);
         if (inputLength > 0 && inputLine[inputLength - 1] == '\n') inputLine[inputLength - 1] = '\0';
-        trim_whitespace(inputLine);
+        trimWhitespace(inputLine);
         if (strlen(inputLine) == 0) continue;
 
         char *tokens[6];
-        int tokenCount = tokenize_command(inputLine, tokens, 6);
+        int tokenCount = tokenizeCommand(inputLine, tokens, 6);
         if (tokenCount == 0) continue;
 
         char *command = tokens[0];
 
         if (strcmp(command, "exit") == 0) 
         {
-            cleanup_and_exit();
+            cleanupAndExit();
             printf("Memory released. Exiting program...\n");
             return 0;
         } 
@@ -766,7 +766,7 @@ int main()
                 printf("Usage: mkdir <dirname>\n"); 
                 continue; 
             }
-            cmd_mkdir(tokens[1]);
+            cmdMkdir(tokens[1]);
         } 
         else if (strcmp(command, "rmdir") == 0) 
         {
@@ -775,7 +775,7 @@ int main()
                 printf("Usage: rmdir <dirname>\n"); 
                 continue; 
             }
-            cmd_rmdir(tokens[1]);
+            cmdRmdir(tokens[1]);
         } 
         else if (strcmp(command, "create") == 0) 
         {
@@ -784,7 +784,7 @@ int main()
                 printf("Usage: create <filename>\n"); 
                 continue; 
             }
-            cmd_create(tokens[1]);
+            cmdCreate(tokens[1]);
         } 
         else if (strcmp(command, "delete") == 0) 
         {
@@ -793,7 +793,7 @@ int main()
                 printf("Usage: delete <filename>\n"); 
                 continue; 
             }
-            cmd_delete(tokens[1]);
+            cmdDelete(tokens[1]);
         } 
         else if (strcmp(command, "write") == 0) 
         {
@@ -801,7 +801,7 @@ int main()
             { 
                 printf("Usage: write <filename> \"<content>\"\n"); continue; 
             }
-            cmd_write(tokens[1], tokens[2]);
+            cmdWrite(tokens[1], tokens[2]);
         } 
         else if (strcmp(command, "read") == 0) 
         {
@@ -810,11 +810,11 @@ int main()
                 printf("Usage: read <filename>\n"); 
                 continue; 
             }
-            cmd_read(tokens[1]);
+            cmdRead(tokens[1]);
         } 
         else if (strcmp(command, "ls") == 0) 
         {
-            cmd_ls();
+            cmdLs();
         } 
         else if (strcmp(command, "cd") == 0) 
         {
@@ -823,15 +823,15 @@ int main()
                 printf("Usage: cd <dirname>\n"); 
                 continue; 
             }
-            cmd_cd(tokens[1]);
+            cmdCd(tokens[1]);
         } 
         else if (strcmp(command, "pwd") == 0) 
         {
-            cmd_pwd();
+            cmdPwd();
         } 
         else if (strcmp(command, "df") == 0) 
         {
-            cmd_df();
+            cmdDf();
         } 
         else 
         {
