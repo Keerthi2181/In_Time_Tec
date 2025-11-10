@@ -339,7 +339,7 @@ static void cmdDelete(const char *fileName)
     }
     freeBlocksOfFile(targetFile);
     removeChildFromDirectory(currentWorkingDirectory, targetFile);
-    freeFilernodeMemory(targetFile);
+    freeFilerNodeMemory(targetFile);
     printf("File deleted successfully.\n");
 }
 
@@ -609,7 +609,7 @@ static void freeAllFilerNodesRecursive(FileNode *directoryNode)
             else 
             {
                 freeBlocksOfFile(childNode);
-                freEFilerNodeMemory(childNode);
+                freeFilerNodeMemory(childNode);
             }
         }
         directoryNode->childHead = NULL;
