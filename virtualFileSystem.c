@@ -23,7 +23,7 @@ static FreeBlock *freeBlockHead=NULL;
 static FreeBlock *freeBlockTail=NULL;
 static int totalFreeBlocks=0;
 
-static void initializeFreeBlock() 
+static void initializeFreeBlocks() 
 {
     for(int index=0;index<NUM_BLOCKS;++index) 
     {
@@ -119,7 +119,7 @@ typedef struct FileNode
 static FileNode *rootDirectory=NULL;
 static FileNode *currentWorkingDirectory=NULL;
 
-static FileNode* createFilernode(const char *name, int isDirectoryFlag, FileNode *parentDirectory) 
+static FileNode* createFilerNode(const char *name, int isDirectoryFlag, FileNode *parentDirectory) 
 {
     FileNode *newNode=(FileNode *)malloc(sizeof(FileNode));
     strncpy(newNode->name, name, MAX_NAME_LEN);
