@@ -254,21 +254,39 @@ static void readFileAndPrint(FileNode *fileNode)
     printf("\n");
 }
 
+static void showHelp()
+{
+    printf("VFS COMMAND HELP\n");
+    printf("help                          -Show help menu\n");
+    printf("mkdir <dirname>               -Create a new directory\n");
+    printf("rmdir <dirname>               -Remove an empty directory\n");
+    printf("create <filename>             -Create a new empty file\n");
+    printf("delete <filename>             -Delete an existing file\n");
+    printf("write <filename> <data>       -Write data to a file\n");
+    printf("read <filename>               -Display contents of a file\n");
+    printf("ls                            -List items in the current directory\n");
+    printf("cd <dirname>                  -Change directory\n");
+    printf("cd ..                         -Move to previous directory\n");
+    printf("pwd                           -Show current directory path\n");
+    printf("df                            -Display disk usage information\n");
+    printf("exit                          -Exit the virtual file system\n");
+}
+
 static void cmdMkdir(const char *directoryName) 
 {
     if(!directoryName || strlen(directoryName) == 0) 
     {
-        printf("Invalid directory name.\n");
+        printf("ERROR:Invalid directory name.\n");
         return;
     }
     if(findChildInDirectory(currentWorkingDirectory, directoryName)) 
     {
-        printf("Name already exists in current directory.\n");
+        printf("ERROR:Name already exists in current directory.\n");
         return;
     }
     FileNode *newDirectory = createFilerNode(directoryName, 1, currentWorkingDirectory);
     addChildToDirectory(currentWorkingDirectory, newDirectory);
-    printf("Directory '%s' created successfully.\n", directoryName);
+    printf("LOG:Directory '%s' created successfully.\n", directoryName);
 }
 
 
@@ -276,28 +294,28 @@ static void cmdRmdir(const char *directoryName)
 {
     if(!directoryName || strlen(directoryName) == 0) 
     {
-        printf("Invalid directory name.\n");
+        printf("ERROR:Invalid directory name.\n");
         return;
     }
     FileNode *targetDirectory = findChildInDirectory(currentWorkingDirectory, directoryName);
     if(!targetDirectory) 
     {
-        printf("Directory not found.\n");
+        printf("ERROR:Directory not found.\n");
         return;
     }
     if(!targetDirectory->isDirectory) 
     {
-        printf("Not a directory.\n");
+        printf("ERROR:Not a directory.\n");
         return;
     }
     if(targetDirectory->childHead != NULL) 
     {
-        printf("Directory not empty. Remove files first.\n");
+        printf("WARN:Directory not empty. Remove files first.\n");
         return;
     }
     removeChildFromDirectory(currentWorkingDirectory, targetDirectory);
     freeFilerNodeMemory(targetDirectory);
-    printf("Directory removed successfully.\n");
+    printf("LOG:Directory removed successfully.\n");
 }
 
 
@@ -305,17 +323,17 @@ static void cmdCreate(const char *fileName)
 {
     if(!fileName || strlen(fileName) == 0) 
     {
-        printf("Invalid file name.\n");
+        printf("ERROR:Invalid file name.\n");
         return;
     }
     if(findChildInDirectory(currentWorkingDirectory, fileName)) 
     {
-        printf("Name already exists in current directory.\n");
+        printf("ERROR:Name already exists in current directory.\n");
         return;
     }
     FileNode *newFile = createFilerNode(fileName, 0, currentWorkingDirectory);
     addChildToDirectory(currentWorkingDirectory, newFile);
-    printf("File '%s' created successfully.\n", fileName);
+    printf("LOG:File '%s' created successfully.\n", fileName);
 }
 
 
@@ -323,49 +341,49 @@ static void cmdDelete(const char *fileName)
 {
     if(!fileName || strlen(fileName) == 0) 
     {
-        printf("Invalid file name.\n");
+        printf("ERROR:Invalid file name.\n");
         return;
     }
     FileNode *targetFile = findChildInDirectory(currentWorkingDirectory, fileName);
     if(!targetFile) 
     {
-        printf("File not found.\n");
+        printf("ERROR:File not found.\n");
         return;
     }
     if(targetFile->isDirectory) 
     {
-        printf("Is a directory. Use rmdir to remove directories.\n");
+        printf("WARN:Is a directory. Use rmdir to remove directories.\n");
         return;
     }
     freeBlocksOfFile(targetFile);
     removeChildFromDirectory(currentWorkingDirectory, targetFile);
     freeFilerNodeMemory(targetFile);
-    printf("File deleted successfully.\n");
+    printf("ERROR:File deleted successfully.\n");
 }
 
 static void cmdWrite(const char *fileName, const char *contentString) 
 {
     if(!fileName) 
     { 
-        printf("Invalid file name.\n"); 
+        printf("ERROR:Invalid file name.\n"); 
         return; 
     }
     FileNode *targetFile = findChildInDirectory(currentWorkingDirectory, fileName);
     if(!targetFile) 
     { 
-        printf("File not found.\n"); 
+        printf("ERRR:File not found.\n"); 
         return; 
     }
     if(targetFile->isDirectory) 
     { 
-        printf("Cannot write to directory.\n"); 
+        printf("ERROR:Cannot write to directory.\n"); 
         return; 
     }
 
     int contentLength = (contentString ? (int)strlen(contentString) : 0);
     if(contentLength == 0) 
     {
-        printf("Data written successfully (size=0 bytes).\n");
+        printf("LOG:Data written successfully (size=0 bytes).\n");
         return;
     }
 
@@ -391,7 +409,7 @@ static void cmdWrite(const char *fileName, const char *contentString)
         if (!allocateNBlocksTemp(blocksNeeded, newBlockIndices)) 
         {
             free(newBlockIndices);
-            printf("Disk full. Write failed.\n");
+            printf("ERROR:Disk full. Write failed.\n");
             return;
         }
     }
@@ -424,7 +442,7 @@ static void cmdWrite(const char *fileName, const char *contentString)
 
     if (newBlockIndices) free(newBlockIndices);
 
-    printf("Data written successfully (size=%d bytes).\n", contentLength);
+    printf("LOG:Data written successfully (size=%d bytes).\n", contentLength);
 }
 
 
@@ -432,18 +450,18 @@ static void cmdRead(const char *fileName)
 {
     if (!fileName) 
     { 
-        printf("Invalid file name.\n"); 
+        printf("ERROR:Invalid file name.\n"); 
         return; 
     }
     FileNode *targetFile = findChildInDirectory(currentWorkingDirectory, fileName);
     if (!targetFile) 
     { 
-        printf("File not found.\n"); 
+        printf("ERROR:File not found.\n"); 
         return; 
     }
     if (targetFile->isDirectory) 
     { 
-        printf("Cannot read a directory.\n"); 
+        printf("ERROR:Cannot read a directory.\n"); 
         return; 
     }
     readFileAndPrint(targetFile);
@@ -473,7 +491,7 @@ static void cmdCd(const char *targetDirectoryName)
 {
     if (!targetDirectoryName) 
     { 
-        printf("Invalid target.\n"); 
+        printf("ERROR:Invalid target.\n"); 
         return; 
     }
 
@@ -485,7 +503,7 @@ static void cmdCd(const char *targetDirectoryName)
             FileNode *currentDirectory = currentWorkingDirectory;
             if (currentDirectory == rootDirectory) 
             {
-                printf("Moved to /\n");
+                printf("LOG:Moved to /\n");
             } 
             else 
             {
@@ -496,7 +514,7 @@ static void cmdCd(const char *targetDirectoryName)
                     directoryStack[directoryDepth++] = currentDirectory;
                     currentDirectory = currentDirectory->parent;
                 }
-                printf("Moved to /");
+                printf("LOG:Moved to /");
                 for (int index = directoryDepth - 1; index >= 0; --index) 
                 {
                     printf("%s", directoryStack[index]->name);
@@ -505,25 +523,25 @@ static void cmdCd(const char *targetDirectoryName)
                 printf("\n");
             }
         } else {
-            printf("Moved to /\n");
+            printf("LOG:Moved to /\n");
         }
         return;
     }
 
     if (strcmp(targetDirectoryName, "/") == 0) {
         currentWorkingDirectory = rootDirectory;
-        printf("Moved to /\n");
+        printf("LOG:Moved to /\n");
         return;
     }
 
     FileNode *targetDirectory = findChildInDirectory(currentWorkingDirectory, targetDirectoryName);
-    if (!targetDirectory) { printf("Directory not found.\n"); return; }
-    if (!targetDirectory->isDirectory) { printf("Not a directory.\n"); return; }
+    if (!targetDirectory) { printf("ERROR:Directory not found.\n"); return; }
+    if (!targetDirectory->isDirectory) { printf("ERROR:Not a directory.\n"); return; }
 
     currentWorkingDirectory = targetDirectory;
 
     FileNode *directoryWalker = currentWorkingDirectory;
-    if (directoryWalker == rootDirectory) { printf("Moved to /\n"); return; }
+    if (directoryWalker == rootDirectory) { printf("LOG:Moved to /\n"); return; }
 
     const FileNode *directoryStack[MAX_DEPTH];
     int directoryDepth = 0;
@@ -532,7 +550,7 @@ static void cmdCd(const char *targetDirectoryName)
         directoryWalker = directoryWalker->parent;
     }
 
-    printf("Moved to /");
+    printf("LOG:Moved to /");
     for (int idx = directoryDepth - 1; idx >= 0; --idx) {
         printf("%s", directoryStack[idx]->name);
         if (idx > 0) printf("/");
@@ -724,8 +742,8 @@ static void initializeVirtualFileSystem()
 int main() 
 {
     initializeVirtualFileSystem();
-    printf("Compact VFS - ready. Type 'exit' to quit.\n\n");
-
+    printf("Compact VFS - ready. Type 'exit' to quit.\n");
+    printf("Type 'help' for command list.\n\n");
     char inputLine[INPUT_BUFFER_SIZE];
     while (1) 
     {
@@ -758,6 +776,10 @@ int main()
             cleanupAndExit();
             printf("Memory released. Exiting program...\n");
             return 0;
+        }
+        else if(strcmp(command, "help") == 0) 
+        {
+            showHelp();
         } 
         else if (strcmp(command, "mkdir") == 0) 
         {
